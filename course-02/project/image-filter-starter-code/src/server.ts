@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
 
@@ -37,6 +37,23 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
     res.send("try GET /filteredimage?image_url={{}}")
   } );
   
+  app.get("/filteredimage", async( req: Request, res: Response ) => {
+    const { image_url } = req.query;
+    try {
+      if (!image_url) {
+        return res.status(400).send(`image_url is required.`);
+      }
+      const image = await filterImageFromURL(image_url.toString());
+      res.sendFile(image); 
+      const deleteFiles : Array<string> = new Array<string>();
+      deleteFiles.push(image)
+      res.on('finish', () => deleteLocalFiles(deleteFiles));
+    } 
+    catch (exception) {
+      return res.status(402).send("Error in handle image");
+    }
+   
+  })
 
   // Start the Server
   app.listen( port, () => {
